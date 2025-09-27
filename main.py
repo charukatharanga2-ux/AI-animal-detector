@@ -22,7 +22,7 @@ from utils.database import DetectionDatabase
 from utils.sms_notifier import SMSNotifier
 from utils.alarm_system import AlarmSystem
 from utils.translator import LanguageTranslator
-from detection.advanced_wildlife_detector import AdvancedWildlifeDetector
+from detection.ultra_accurate_detector import UltraAccurateWildlifeDetector
 from detection.peacock_detector import PeacockDetector
 from detection.human_filter import HumanFilter
 from camera.camera_manager import CameraManager
@@ -59,7 +59,7 @@ class WildlifeDetectionApp:
         self.sms_notifier = SMSNotifier()
         self.alarm_system = AlarmSystem()
         self.translator = LanguageTranslator()
-        self.detector = AdvancedWildlifeDetector()
+        self.detector = UltraAccurateWildlifeDetector()
         self.peacock_detector = PeacockDetector()
         self.human_filter = HumanFilter()
         self.camera_manager = CameraManager()

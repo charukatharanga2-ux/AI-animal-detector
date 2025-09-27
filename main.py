@@ -22,7 +22,9 @@ from utils.database import DetectionDatabase
 from utils.sms_notifier import SMSNotifier
 from utils.alarm_system import AlarmSystem
 from utils.translator import LanguageTranslator
-from detection.wildlife_detector import WildlifeDetector
+from detection.advanced_wildlife_detector import AdvancedWildlifeDetector
+from detection.peacock_detector import PeacockDetector
+from detection.human_filter import HumanFilter
 from camera.camera_manager import CameraManager
 
 class WildlifeDetectionApp:
@@ -57,7 +59,9 @@ class WildlifeDetectionApp:
         self.sms_notifier = SMSNotifier()
         self.alarm_system = AlarmSystem()
         self.translator = LanguageTranslator()
-        self.detector = WildlifeDetector()
+        self.detector = AdvancedWildlifeDetector()
+        self.peacock_detector = PeacockDetector()
+        self.human_filter = HumanFilter()
         self.camera_manager = CameraManager()
         
         # Detection state
@@ -543,12 +547,40 @@ For support, check the README.md file.
                 # Run detection if enabled
                 detections = []
                 if self.detection_running:
-                    detections = self.detector.detect_animals(frame)
+                    # Use advanced wildlife detector
+                    wildlife_detections = self.detector.detect_animals(frame)
+                    
+                    # Use specialized peacock detector
+                    peacock_detections = self.peacock_detector.detect_peacocks(frame)
+                    
+                    # Combine detections, prioritizing peacock detector for peacocks
+                    detections = wildlife_detections.copy()
+                    
+                    # Add peacock detections if they're more confident
+                    for peacock_det in peacock_detections:
+                        # Check if we already have a peacock detection
+                        existing_peacock = any(d['animal_type'] == 'peacock' for d in detections)
+                        if not existing_peacock or peacock_det['confidence'] > 0.8:
+                            detections.append(peacock_det)
+                    
+                    # Filter out human detections to prevent false positives
+                    detections = self.human_filter.filter_human_detections(frame, detections)
+                    
                     self.handle_detections(detections)
                 
                 # Draw detections on frame
                 if detections:
-                    frame = self.detector.draw_detections(frame, detections)
+                    # Separate peacock detections for special drawing
+                    peacock_detections = [d for d in detections if d['animal_type'] == 'peacock']
+                    other_detections = [d for d in detections if d['animal_type'] != 'peacock']
+                    
+                    # Draw other animals
+                    if other_detections:
+                        frame = self.detector.draw_detections(frame, other_detections)
+                    
+                    # Draw peacocks with specialized markers
+                    if peacock_detections:
+                        frame = self.peacock_detector.draw_peacock_detection(frame, peacock_detections)
                 
                 # Convert frame for display
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
